@@ -1,13 +1,13 @@
-"""bidnavi CLI（技術検証フェーズの操作口）
+"""入札案件情報パイプライン CLI（技術検証フェーズの操作口）
 
-    python -m bidnavi.cli init                  DBを作る
-    python -m bidnavi.cli crawl                 クロール→取り込み
-    python -m bidnavi.cli crawl --offline       保存済みHTMLで実行（通信しない）
-    python -m bidnavi.cli health                サイレント故障の判定
-    python -m bidnavi.cli match --company co-1  マッチング実行
-    python -m bidnavi.cli digest --company co-1 日次ダイジェストを出力
-    python -m bidnavi.cli funnel --company co-1 3段フィルタの通過率とコスト
-    python -m bidnavi.cli evaluate <cases.jsonl> --company co-1  精度計測
+    python -m tender_pipeline.cli init                  DBを作る
+    python -m tender_pipeline.cli crawl                 クロール→取り込み
+    python -m tender_pipeline.cli crawl --offline       保存済みHTMLで実行（通信しない）
+    python -m tender_pipeline.cli health                サイレント故障の判定
+    python -m tender_pipeline.cli match --company co-1  マッチング実行
+    python -m tender_pipeline.cli digest --company co-1 日次ダイジェストを出力
+    python -m tender_pipeline.cli funnel --company co-1 3段フィルタの通過率とコスト
+    python -m tender_pipeline.cli evaluate <cases.jsonl> --company co-1  精度計測
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from .pipeline.ingest import ingest_tender
 from .pipeline.lifecycle import close_expired, find_disappeared
 from .pipeline.run import CrawlSession
 
-DEFAULT_DB = 'bidnavi.db'
+DEFAULT_DB = 'tender.db'
 FIXTURE = (pathlib.Path(__file__).parent.parent.parent
            / 'tests' / 'fixtures' / 'yokohama_listing.html')
 
@@ -258,7 +258,7 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog='bidnavi', description=__doc__)
+    parser = argparse.ArgumentParser(prog='tender-pipeline', description=__doc__)
     parser.add_argument('--db', default=DEFAULT_DB)
     sub = parser.add_subparsers(dest='command', required=True)
 

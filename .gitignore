@@ -11,7 +11,7 @@ __pycache__/
 venv/
 *.egg-info/
 
-# 環境変数・秘密（BIDNAVI_CONTACT / ANTHROPIC_API_KEY はここに置かない）
+# 環境変数・秘密（TENDER_PIPELINE_CONTACT / ANTHROPIC_API_KEY はここに置かない）
 .env
 .env.*
 !.env.example

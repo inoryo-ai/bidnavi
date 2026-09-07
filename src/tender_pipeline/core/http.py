@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 
 import requests
 
-logger = logging.getLogger('bidnavi.http')
+logger = logging.getLogger('tender_pipeline.http')
 
 #: CR-102: User-Agent にはサービス名と**到達可能な問い合わせ先**を明記する。
 #: 相手（自治体）が問題を感じたときに連絡できないクローラを走らせてはいけない。
@@ -31,9 +31,9 @@ logger = logging.getLogger('bidnavi.http')
 #: 連絡先は環境変数で渡す。ソースに個人のメールアドレスを埋め込むと、
 #: リポジトリを公開した瞬間に永続的に露出する。
 #: 未設定のまま実サイトへクロールすることは許さない（build_user_agent 参照）。
-USER_AGENT_CONTACT_ENV = 'BIDNAVI_CONTACT'
-USER_AGENT_TEMPLATE = 'bidnavi/0.1 (+{url}; contact: {contact})'
-DEFAULT_PROJECT_URL = 'https://github.com/inoryo-ai/bidnavi'
+USER_AGENT_CONTACT_ENV = 'TENDER_PIPELINE_CONTACT'
+USER_AGENT_TEMPLATE = 'public-tender-pipeline/0.1 (+{url}; contact: {contact})'
+DEFAULT_PROJECT_URL = 'https://github.com/inoryo-ai/public-tender-pipeline'
 
 #: 連絡先未設定時のプレースホルダ。これで外部サイトを叩かせない。
 UNSET_CONTACT = 'CONTACT-NOT-SET'
@@ -46,7 +46,7 @@ class ContactNotConfigured(RuntimeError):
 
 
 def build_user_agent(*, url: str = DEFAULT_PROJECT_URL) -> str:
-    """環境変数 BIDNAVI_CONTACT から User-Agent を組み立てる。
+    """環境変数 TENDER_PIPELINE_CONTACT から User-Agent を組み立てる。
 
     :raises ContactNotConfigured: 未設定の場合
     """

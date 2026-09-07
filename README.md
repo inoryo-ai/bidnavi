@@ -1,4 +1,4 @@
-# bidnavi — 入札案件情報システム（技術検証フェーズ）
+# 入札案件情報パイプライン（技術検証フェーズ）
 
 中小事業者が、自社に関係のある入札案件を「探さずに」受け取り、
 応札するかどうかを当日中に判断できる状態をつくる。
@@ -28,13 +28,13 @@ export PYTHONPATH=src
 ### 通信せずに一通り試す
 
 ```bash
-python -m bidnavi.cli init                       # DBを作る
-python -m bidnavi.cli crawl --offline            # 保存済みHTMLで実行
-python -m bidnavi.cli health                     # サイレント故障の判定
-python -m bidnavi.cli match   --company co-demo --stub-llm
-python -m bidnavi.cli funnel  --company co-demo  # 3段フィルタの通過率とコスト
-python -m bidnavi.cli digest  --company co-demo  # 日次ダイジェスト
-python -m bidnavi.cli evaluate tests/fixtures/eval_seed.jsonl --company co-demo --stub-llm
+python -m tender_pipeline.cli init                       # DBを作る
+python -m tender_pipeline.cli crawl --offline            # 保存済みHTMLで実行
+python -m tender_pipeline.cli health                     # サイレント故障の判定
+python -m tender_pipeline.cli match   --company co-demo --stub-llm
+python -m tender_pipeline.cli funnel  --company co-demo  # 3段フィルタの通過率とコスト
+python -m tender_pipeline.cli digest  --company co-demo  # 日次ダイジェスト
+python -m tender_pipeline.cli evaluate tests/fixtures/eval_seed.jsonl --company co-demo --stub-llm
 ```
 
 ### 実サイトへクロールする
@@ -43,9 +43,9 @@ python -m bidnavi.cli evaluate tests/fixtures/eval_seed.jsonl --company co-demo 
 クローラは走らせない、という方針をコードで強制している（CR-102）。
 
 ```bash
-cp .env.example .env          # BIDNAVI_CONTACT を自分の連絡先に書き換える
-export BIDNAVI_CONTACT="you@example.com"
-python -m bidnavi.cli crawl   # 1秒間隔・同時接続1・robots.txt 尊重
+cp .env.example .env          # TENDER_PIPELINE_CONTACT を自分の連絡先に書き換える
+export TENDER_PIPELINE_CONTACT="you@example.com"
+python -m tender_pipeline.cli crawl   # 1秒間隔・同時接続1・robots.txt 尊重
 ```
 
 未設定のまま実行すると、通信せずに終了コード2で止まる。
@@ -54,7 +54,7 @@ python -m bidnavi.cli crawl   # 1秒間隔・同時接続1・robots.txt 尊重
 
 ```bash
 python -m pytest              # 216件（外部通信なし）
-BIDNAVI_CONTACT="you@example.com" python -m pytest -m network   # 実サイト接続 1件
+TENDER_PIPELINE_CONTACT="you@example.com" python -m pytest -m network   # 実サイト接続 1件
 ```
 
 ---
@@ -91,7 +91,7 @@ BIDNAVI_CONTACT="you@example.com" python -m pytest -m network   # 実サイト�
 ## 構成
 
 ```
-src/bidnavi/
+src/tender_pipeline/
   core/
     types.py         値オブジェクトと統制語彙（不変条件を型で強制）
     db.py            SQLite スキーマ（本番Postgresへ1対1で移植可能）

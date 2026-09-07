@@ -12,15 +12,15 @@ import datetime as dt
 
 import pytest
 
-from bidnavi.core.natural_key import AnchorKind, build_natural_key, choose_anchor
-from bidnavi.core.normalize.dates import (
+from tender_pipeline.core.natural_key import AnchorKind, build_natural_key, choose_anchor
+from tender_pipeline.core.normalize.dates import (
     parse_deadline,
     parse_japanese_date,
     parse_japanese_time,
 )
-from bidnavi.core.normalize.price import parse_price
-from bidnavi.core.normalize.text import normalize_text, normalize_title
-from bidnavi.core.types import Deadline, TaxBasis, TimeSource
+from tender_pipeline.core.normalize.price import parse_price
+from tender_pipeline.core.normalize.text import normalize_text, normalize_title
+from tender_pipeline.core.types import Deadline, TaxBasis, TimeSource
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ def test_price_range_filter_keeps_unknown_amounts() -> None:
 
 
 def test_price_rejects_inconsistent_construction() -> None:
-    from bidnavi.core.types import Price
+    from tender_pipeline.core.types import Price
     with pytest.raises(ValueError):
         Price(amount=100, undisclosed=True, tax_basis=TaxBasis.UNKNOWN, raw='x')
 
@@ -314,7 +314,7 @@ def test_natural_key_rejects_empty_title() -> None:
 
     空文字でハッシュすると同一機関・同一日付の全案件が1件に潰れる。
     """
-    from bidnavi.core.natural_key import EmptyTitleError
+    from tender_pipeline.core.natural_key import EmptyTitleError
     with pytest.raises(EmptyTitleError):
         build_natural_key('jp-x', '　', announced_date=dt.date(2026, 3, 1))
 
@@ -352,7 +352,7 @@ def test_deadline_single_date_is_not_ambiguous() -> None:
 
 def test_find_dates_does_not_double_count_era_dates() -> None:
     """「令和8年3月12日」を和暦と西暦で二重に拾わないこと。"""
-    from bidnavi.core.normalize.dates import find_dates
+    from tender_pipeline.core.normalize.dates import find_dates
     found = find_dates('令和8年3月12日')
     assert [d for d, _ in found] == [dt.date(2026, 3, 12)]
 

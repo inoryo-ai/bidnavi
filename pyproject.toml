@@ -1,5 +1,5 @@
 [project]
-name = "bidnavi"
+name = "public-tender-pipeline"
 version = "0.1.0"
 description = "入札案件情報システム - 技術検証フェーズ"
 requires-python = ">=3.11"

@@ -63,7 +63,7 @@ class Digest:
         return not self.items
 
     def render(self) -> str:
-        header = f'【bidnavi】{self.generated_at:%Y-%m-%d} の新着案件'
+        header = f'【入札案件通知】{self.generated_at:%Y-%m-%d} の新着案件'
         if self.is_empty:
             return (f'{header}\n\n'
                     '本日は条件に合う新着案件がありませんでした。\n\n'

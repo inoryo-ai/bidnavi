@@ -9,14 +9,14 @@ import io
 
 import pytest
 
-from bidnavi.core.attachments import (
+from tender_pipeline.core.attachments import (
     ExtractionResult,
     classify,
     extract,
     extract_pdf,
     guess_extension,
 )
-from bidnavi.core.types import ExtractionStatus
+from tender_pipeline.core.types import ExtractionStatus
 
 
 @pytest.mark.parametrize(('url', 'expected'), [
@@ -113,7 +113,7 @@ def test_undecodable_pdf_is_not_reported_as_ok() -> None:
     ('入札公告(cid:229)○○業務委託の実施について 予定価格は非公表とする', True),
 ])
 def test_cid_ratio_threshold(text: str, expected_ok: bool) -> None:
-    from bidnavi.core.attachments import MAX_CID_RATIO, cid_ratio
+    from tender_pipeline.core.attachments import MAX_CID_RATIO, cid_ratio
     assert (cid_ratio(text) <= MAX_CID_RATIO) is expected_ok
 
 

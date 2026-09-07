@@ -16,22 +16,22 @@ import sqlite3
 
 import pytest
 
-from bidnavi.core.db import connect
-from bidnavi.core.html import looks_mojibake, soup_from
-from bidnavi.core.types import CrawlStatus, CrawlerKind
-from bidnavi.crawlers.base import (
+from tender_pipeline.core.db import connect
+from tender_pipeline.core.html import looks_mojibake, soup_from
+from tender_pipeline.core.types import CrawlStatus, CrawlerKind
+from tender_pipeline.crawlers.base import (
     CrawlerRegistry,
     SelectorMissError,
 )
-from bidnavi.crawlers.yokohama import (
+from tender_pipeline.crawlers.yokohama import (
     LISTING_SELECTOR,
     ORGANIZATION_ID,
     YokohamaCrawler,
     is_result_announcement,
 )
-from bidnavi.pipeline.health import HealthState, evaluate_health
-from bidnavi.pipeline.ingest import ingest_tender
-from bidnavi.pipeline.run import CrawlSession
+from tender_pipeline.pipeline.health import HealthState, evaluate_health
+from tender_pipeline.pipeline.ingest import ingest_tender
+from tender_pipeline.pipeline.run import CrawlSession
 
 NOW = dt.datetime(2026, 9, 7, 10, 0)
 FIXTURE = pathlib.Path(__file__).parent / 'fixtures' / 'yokohama_listing.html'
@@ -215,7 +215,7 @@ def test_result_announcement_is_excluded_from_digest(
     conn: sqlite3.Connection, listing_html: bytes
 ) -> None:
     """終了案件が通知に載らないこと（経路の端まで確認する）。"""
-    from bidnavi.notify.digest import build_digest
+    from tender_pipeline.notify.digest import build_digest
 
     conn.execute("INSERT INTO company (id, name) VALUES ('co', 'テスト社')")
     for raw in YokohamaCrawler().parse(listing_html, now=NOW):
@@ -276,7 +276,7 @@ def test_live_fetch_matches_fixture_structure() -> None:
     """実サイトが今もこの構造かを確認する。落ちたら構造変化のサイン。"""
     import os
 
-    from bidnavi.core.http import (
+    from tender_pipeline.core.http import (
         USER_AGENT_CONTACT_ENV,
         RateLimitedClient,
         build_user_agent,
@@ -300,7 +300,7 @@ def test_client_refuses_to_fetch_without_contact(monkeypatch) -> None:
 
     相手が問題を感じたときに連絡できないクローラを走らせてはいけない。
     """
-    from bidnavi.core.http import ContactNotConfigured, RateLimitedClient
+    from tender_pipeline.core.http import ContactNotConfigured, RateLimitedClient
 
     client = RateLimitedClient()   # 既定の User-Agent は連絡先が未設定
     with pytest.raises(ContactNotConfigured):
@@ -308,7 +308,7 @@ def test_client_refuses_to_fetch_without_contact(monkeypatch) -> None:
 
 
 def test_build_user_agent_requires_env(monkeypatch) -> None:
-    from bidnavi.core.http import (
+    from tender_pipeline.core.http import (
         USER_AGENT_CONTACT_ENV,
         ContactNotConfigured,
         build_user_agent,
@@ -321,7 +321,7 @@ def test_build_user_agent_requires_env(monkeypatch) -> None:
     monkeypatch.setenv(USER_AGENT_CONTACT_ENV, 'ops@example.com')
     ua = build_user_agent()
     assert 'ops@example.com' in ua
-    assert 'bidnavi' in ua
+    assert 'tender-pipeline' in ua
 
 
 def test_no_personal_email_in_source() -> None:

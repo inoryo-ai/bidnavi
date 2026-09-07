@@ -14,11 +14,11 @@ import sqlite3
 
 import pytest
 
-from bidnavi.core.db import connect
-from bidnavi.core.types import CrawlStatus, RawTender
-from bidnavi.pipeline.health import HealthState, evaluate_all, evaluate_health
-from bidnavi.pipeline.ingest import IngestOutcome, classify_method, ingest_tender
-from bidnavi.pipeline.run import CrawlSession, needs_rerun
+from tender_pipeline.core.db import connect
+from tender_pipeline.core.types import CrawlStatus, RawTender
+from tender_pipeline.pipeline.health import HealthState, evaluate_all, evaluate_health
+from tender_pipeline.pipeline.ingest import IngestOutcome, classify_method, ingest_tender
+from tender_pipeline.pipeline.run import CrawlSession, needs_rerun
 
 NOW = dt.datetime(2026, 9, 7, 10, 0)
 ORG = 'city-test'
@@ -365,7 +365,7 @@ def test_ingest_updates_last_seen_even_when_unchanged(conn: sqlite3.Connection) 
 
 def test_tender_stays_visible_until_deadline_time_passes(conn: sqlite3.Connection) -> None:
     """AC-07 / §7.3-2: 締切当日の案件を、締切時刻を過ぎるまで消さない。"""
-    from bidnavi.pipeline.lifecycle import close_expired
+    from tender_pipeline.pipeline.lifecycle import close_expired
 
     ingest_tender(conn, make_raw(bid_deadline_text='令和8年3月20日 午後5時'), now=NOW)
 
@@ -380,7 +380,7 @@ def test_tender_stays_visible_until_deadline_time_passes(conn: sqlite3.Connectio
 
 def test_time_absent_deadline_survives_the_whole_day(conn: sqlite3.Connection) -> None:
     """時刻不明の締切を 00:00 として扱うと、当日の午前中に消える。"""
-    from bidnavi.pipeline.lifecycle import close_expired
+    from tender_pipeline.pipeline.lifecycle import close_expired
 
     ingest_tender(conn, make_raw(bid_deadline_text='令和8年3月20日'), now=NOW)
 
@@ -391,7 +391,7 @@ def test_time_absent_deadline_survives_the_whole_day(conn: sqlite3.Connection) -
 
 def test_unknown_deadline_is_never_auto_closed(conn: sqlite3.Connection) -> None:
     """締切が読めなかった案件を「不明だから消す」のは取りこぼし。"""
-    from bidnavi.pipeline.lifecycle import close_expired, is_closed
+    from tender_pipeline.pipeline.lifecycle import close_expired, is_closed
 
     ingest_tender(conn, make_raw(bid_deadline_text=None), now=NOW)
     assert close_expired(conn, now=dt.datetime(2030, 1, 1)) == 0
@@ -400,8 +400,8 @@ def test_unknown_deadline_is_never_auto_closed(conn: sqlite3.Connection) -> None
 
 def test_notify_and_close_lean_opposite_directions() -> None:
     """時刻不明の扱いは通知と締切判定で逆になる。どちらも取りこぼさない側。"""
-    from bidnavi.core.normalize.dates import parse_deadline
-    from bidnavi.pipeline.lifecycle import deadline_expires_at
+    from tender_pipeline.core.normalize.dates import parse_deadline
+    from tender_pipeline.pipeline.lifecycle import deadline_expires_at
 
     d = parse_deadline('令和8年3月20日')
     assert d is not None and d.time is None
@@ -413,7 +413,7 @@ def test_find_disappeared_flags_tenders_gone_before_deadline(
     conn: sqlite3.Connection,
 ) -> None:
     """締切前なのに一覧から消えた案件を、黙って closed にせず人に見せる。"""
-    from bidnavi.pipeline.lifecycle import find_disappeared
+    from tender_pipeline.pipeline.lifecycle import find_disappeared
 
     ingest_tender(conn, make_raw(bid_deadline_text='令和8年12月20日'), now=NOW)
 
@@ -426,7 +426,7 @@ def test_find_disappeared_flags_tenders_gone_before_deadline(
 
 def test_find_disappeared_ignores_already_expired(conn: sqlite3.Connection) -> None:
     """締切済みの案件が見えなくなるのは当然なので警告しない。"""
-    from bidnavi.pipeline.lifecycle import find_disappeared
+    from tender_pipeline.pipeline.lifecycle import find_disappeared
 
     ingest_tender(conn, make_raw(bid_deadline_text='令和8年3月20日'), now=NOW)
     assert find_disappeared(conn, ORG, now=dt.datetime(2026, 4, 1)) == []

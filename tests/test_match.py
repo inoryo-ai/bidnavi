@@ -11,10 +11,10 @@ import sqlite3
 
 import pytest
 
-from bidnavi.core.db import connect
-from bidnavi.core.normalize.price import parse_price
-from bidnavi.match.engine import LLM_NOTIFY_THRESHOLD, evaluate, funnel_stats
-from bidnavi.match.llm import (
+from tender_pipeline.core.db import connect
+from tender_pipeline.core.normalize.price import parse_price
+from tender_pipeline.match.engine import LLM_NOTIFY_THRESHOLD, evaluate, funnel_stats
+from tender_pipeline.match.llm import (
     BudgetedLlmJudge,
     BudgetExceeded,
     LlmVerdict,
@@ -22,8 +22,8 @@ from bidnavi.match.llm import (
     cache_key,
     llm_calls_this_month,
 )
-from bidnavi.match.profile import CompanyProfile
-from bidnavi.match.stages import Stage, similarity, stage_one, stage_two
+from tender_pipeline.match.profile import CompanyProfile
+from tender_pipeline.match.stages import Stage, similarity, stage_one, stage_two
 
 NOW = dt.datetime(2026, 9, 7, 10, 0)
 COMPANY = 'co-test'
@@ -350,7 +350,7 @@ def test_spec_text_is_truncated_before_billing(
     conn: sqlite3.Connection, profile: CompanyProfile
 ) -> None:
     """長大なPDFで青天井に課金しない。"""
-    from bidnavi.match.llm import MAX_SPEC_CHARS
+    from tender_pipeline.match.llm import MAX_SPEC_CHARS
 
     client = StubLlmClient()
     judge = BudgetedLlmJudge(conn, client)

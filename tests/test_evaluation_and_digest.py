@@ -13,8 +13,8 @@ import sqlite3
 
 import pytest
 
-from bidnavi.core.db import connect
-from bidnavi.evaluation.metrics import (
+from tender_pipeline.core.db import connect
+from tender_pipeline.evaluation.metrics import (
     LabeledCase,
     Metrics,
     Prediction,
@@ -23,7 +23,7 @@ from bidnavi.evaluation.metrics import (
     reachability,
     score,
 )
-from bidnavi.notify.digest import DISCLAIMER, build_digest
+from tender_pipeline.notify.digest import DISCLAIMER, build_digest
 
 NOW = dt.datetime(2026, 9, 7, 10, 0)
 SEED = pathlib.Path(__file__).parent / 'fixtures' / 'eval_seed.jsonl'
