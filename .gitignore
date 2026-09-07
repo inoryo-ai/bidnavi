@@ -1,0 +1,25 @@
+# DB（実行時に生成される）
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# 環境変数・秘密（BIDNAVI_CONTACT / ANTHROPIC_API_KEY はここに置かない）
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

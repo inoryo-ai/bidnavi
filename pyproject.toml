@@ -1,0 +1,13 @@
+[project]
+name = "bidnavi"
+version = "0.1.0"
+description = "入札案件情報システム - 技術検証フェーズ"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q -m 'not network'"
+markers = [
+    "network: 外部サイトへ実際に接続するテスト（既定では実行しない）",
+]
