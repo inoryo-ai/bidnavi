@@ -14,6 +14,7 @@ robots.txt の扱いで一箇所だけ注意がある:
 """
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
 import time
@@ -117,6 +118,80 @@ def fetch_robots(base_url: str, *, user_agent: str, timeout: float) -> RobotsPol
     return RobotsPolicy(False, parser, 'parsed')
 
 
+#: 1リクエストで受け取ってよい最大バイト数（既定 25MB）。
+#: 自治体の仕様書PDFは通常 数百KB〜数MB。これを大きく超えるものは
+#: 取り違えか攻撃入力とみなす。
+#:
+#: 🔴 上限が無いと、docx/xlsx（実体はzip）で解凍爆弾が成立する。
+#:    実測: 51KB の圧縮ファイルが 50MB に展開される（増幅率 1,026倍）。
+DEFAULT_MAX_BYTES = 25 * 1024 * 1024
+
+#: 取得を許可するスキーム。file:// や ftp:// でローカルを読ませない。
+_ALLOWED_SCHEMES: frozenset[str] = frozenset({'http', 'https'})
+
+
+class UnsafeUrl(ValueError):
+    """取得してはいけないURL（SSRF対策）。"""
+
+
+class ResponseTooLarge(FetchError):
+    """レスポンスが上限を超えた。解凍爆弾・巨大ファイル対策。"""
+
+
+def _is_private_host(host: str) -> bool:
+    """内部ネットワーク宛かどうか。
+
+    名前解決までは行わない（DNSリバインディングは別の対策が要る）。
+    ここで止めたいのは、案件ページのリンクに
+    `http://169.254.169.254/`（クラウドのメタデータ）や `http://127.0.0.1:8080/`
+    が紛れていた場合に、それをそのまま取りに行ってしまうこと。
+    """
+    name = host.split(':')[0].strip('[]').lower()
+    if not name or name == 'localhost' or name.endswith('.localhost'):
+        return True
+    if name.endswith('.internal') or name.endswith('.local'):
+        return True
+    try:
+        address = ipaddress.ip_address(name)
+    except ValueError:
+        return False  # ホスト名。名前解決の結果までは見ない
+    return (address.is_private or address.is_loopback or address.is_link_local
+            or address.is_reserved or address.is_multicast or address.is_unspecified)
+
+
+def assert_fetchable(url: str) -> None:
+    """取得してよいURLかを検査する。危険なら UnsafeUrl。
+
+    クローラは「案件ページに書かれているリンク」を辿る。
+    リンクの中身は相手のサイトが決めるので、こちらの内部ネットワークへ
+    誘導される可能性を常に前提にする。
+    """
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
+        raise UnsafeUrl(f'許可されていないスキームです: {parsed.scheme or "(なし)"} — {url}')
+    if not parsed.netloc:
+        raise UnsafeUrl(f'ホストがありません: {url}')
+    if _is_private_host(parsed.netloc):
+        raise UnsafeUrl(f'内部ネットワーク宛のURLは取得しません: {url}')
+
+
+def _assert_within_size_limit(res: requests.Response, max_bytes: int) -> None:
+    """本文サイズの上限を検査する。
+
+    Content-Length は自己申告なので、実体のバイト数でも必ず確認する。
+    申告だけ信じると、嘘の Content-Length で上限を回避できてしまう。
+    """
+    declared = res.headers.get('Content-Length')
+    if declared is not None and declared.isdigit() and int(declared) > max_bytes:
+        raise ResponseTooLarge(
+            f'Content-Length が上限を超えています: {int(declared):,} > {max_bytes:,} — {res.url}')
+
+    actual = len(res.content)
+    if actual > max_bytes:
+        raise ResponseTooLarge(
+            f'レスポンスが上限を超えています: {actual:,} > {max_bytes:,} — {res.url}')
+
+
 @dataclass(slots=True)
 class RateLimitedClient:
     """ホスト単位でレート制限をかける逐次HTTPクライアント。
@@ -129,6 +204,7 @@ class RateLimitedClient:
     timeout: float = DEFAULT_TIMEOUT
     max_retries: int = DEFAULT_MAX_RETRIES
     respect_robots: bool = True
+    max_bytes: int = DEFAULT_MAX_BYTES
     _last_request_at: dict[str, float] = field(default_factory=dict, init=False)
     _robots: dict[str, RobotsPolicy] = field(default_factory=dict, init=False)
     _session: requests.Session = field(default_factory=requests.Session, init=False)
@@ -159,6 +235,10 @@ class RateLimitedClient:
                 f'RateLimitedClient(user_agent=build_user_agent()) を使ってください。'
             )
 
+        # 取得先の妥当性を、robots.txt を見に行くより先に検査する。
+        # 不正なURLで robots.txt を取りに行くこと自体が SSRF になるため。
+        assert_fetchable(url)
+
         if self.respect_robots and not self._policy_for(url).can_fetch(self.user_agent, url):
             raise RobotsDisallowed(f'robots.txt により禁止されています: {url}')
 
@@ -175,6 +255,10 @@ class RateLimitedClient:
                 last_error = exc
             else:
                 if res.status_code < 400:
+                    # リダイレクト先が内部アドレスへ誘導されていないか確認する。
+                    # requests は既定でリダイレクトを追うため、最終URLで再検査する。
+                    assert_fetchable(res.url)
+                    _assert_within_size_limit(res, self.max_bytes)
                     return res
                 # 5xx は一時障害の可能性があるのでリトライ、4xx は即座に失敗
                 last_error = FetchError(f'HTTP {res.status_code}: {url}')

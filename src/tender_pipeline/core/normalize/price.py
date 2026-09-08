@@ -26,14 +26,37 @@ _EMPTY_MARKERS: frozenset[str] = frozenset({
 _TAX_EXCLUDED = re.compile(r'税抜|税別|消費税.{0,4}(?:抜|除|含まない|含まず)')
 _TAX_INCLUDED = re.compile(r'税込|消費税.{0,4}含')
 
+#: 金額テキストとして受け付ける最大長。
+#: これを超える文字列は金額欄ではない（表の取り違え・攻撃入力）。
+#: 長い入力をパーサに流さないための第一の防波堤。
+MAX_PRICE_TEXT_CHARS = 200
+
+#: 数字の連なりとして受け付ける最大桁数。
+#: 1,000兆円（16桁）を超える自治体予算は存在しない。
+#:
+#: 🔴 上限を付けない `(\d+)\s*億` は、億を含まない長い数字列に対して
+#:    O(n^2) の破滅的バックトラックを起こす（実測: 9万桁で313秒）。
+#:    案件1件でパイプライン全体が停止するため、桁数を必ず縛る。
+#:
+#: `(?<!\d)` で「数字の連なりの先頭」に固定しているのも意図的。
+#: これが無いと、17桁の数字に対して途中の16桁だけが一致し、
+#: **黙って桁が欠けた金額**になる。一致しない（＝不明）ほうが安全。
+_MAX_DIGITS = 16
+_D = rf'(?<!\d)(\d{{1,{_MAX_DIGITS}}})'
+
 # 単位。自治体の予算表では「千円」「百万円」単位が普通に使われる。
 # ここを取りこぼすと金額が 1/1000 になり、レンジ絞り込みが壊滅する。
-_HYAKUMAN = re.compile(r'(\d+)\s*百万')
-_OKU = re.compile(r'(\d+)\s*億')
-_MAN = re.compile(r'(\d+)\s*万')
-_SEN = re.compile(r'(\d+)\s*千')
-_YEN = re.compile(r'(\d+)\s*円')
-_BARE_NUMBER = re.compile(r'\d+')
+_HYAKUMAN = re.compile(rf'{_D}\s*百万')
+_OKU = re.compile(rf'{_D}\s*億')
+_MAN = re.compile(rf'{_D}\s*万')
+_SEN = re.compile(rf'{_D}\s*千')
+_YEN = re.compile(rf'{_D}\s*円')
+#: 単位も「円」も無い、裸の数字。
+#: 🔴 末尾にも `(?!\d)` が要る。これが無いと 20桁の数字に対して
+#:    先頭16桁だけが一致し、**黙って桁が欠けた金額**になる。
+#:    単位付きパターンは後ろに「円」「億」が続くため先頭ガードだけで足りるが、
+#:    こちらは数字で終わるので両側を締める必要がある。
+_BARE_NUMBER = re.compile(rf'{_D}(?!\d)')
 
 _UNKNOWN = Price(amount=None, undisclosed=False, tax_basis=TaxBasis.UNKNOWN, raw='')
 
@@ -107,6 +130,13 @@ def parse_price(value: str | None) -> Price:
     if value is None:
         return _UNKNOWN
     raw = value.strip()
+
+    # 金額欄に収まらない長さの入力は解釈しない（DoS対策の第一段）。
+    # 「読めなかった」として扱い、推測しない。
+    if len(raw) > MAX_PRICE_TEXT_CHARS:
+        return Price(amount=None, undisclosed=False,
+                     tax_basis=TaxBasis.UNKNOWN, raw=raw[:MAX_PRICE_TEXT_CHARS])
+
     text = unicodedata.normalize('NFKC', raw)
 
     if text.strip() in _EMPTY_MARKERS:
