@@ -5,6 +5,36 @@ description = "入札案件情報システム - 技術検証フェーズ"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 
+# 実行に必要な依存。
+# クロールとHTML解析だけなら requests / beautifulsoup4 / lxml で足りる。
+dependencies = [
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+]
+
+[project.optional-dependencies]
+# 添付ファイル（PDF / Word / Excel）の本文抽出に使う。
+# 未インストールでも SKIPPED ステータスを返して動く設計。
+documents = [
+    "pdfplumber>=0.11",
+    "openpyxl>=3.1",
+    "python-docx>=1.1",
+]
+# LLM段（3段目）の実測にのみ使う。技術検証フェーズでは未使用。
+llm = ["anthropic>=0.40"]
+# 開発・CI用。ここが依存集合の単一の正。
+# 🔴 CI の yaml にパッケージ名を直接書かないこと。
+#    書くと「ローカルでは動くが CI では落ちる」を繰り返す（実際に2回起きた）。
+dev = [
+    "public-tender-pipeline[documents,llm]",
+    "pytest>=8.0",
+    "pypdf>=4.0",       # テスト用のPDFを生成する
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-requests",
+]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

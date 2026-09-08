@@ -22,11 +22,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
+      # 🔴 パッケージ名をここに直接書かない。
+      #    書くと pyproject と二重管理になり、
+      #    「ローカルでは動くが CI では落ちる」を繰り返す（実際に2回起きた）。
+      #    依存集合の単一の正は pyproject.toml の [project.optional-dependencies].dev。
       - name: 依存をインストール
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 lxml pdfplumber openpyxl python-docx
-          pip install pytest ruff mypy
+          pip install -e ".[dev]"
 
       - name: Lint（ruff）
         run: python -m ruff check .
