@@ -13,15 +13,14 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import json
 import pathlib
 import sqlite3
 import sys
 
 from .core.db import connect
+from .core.http import ContactNotConfigured, RateLimitedClient, build_user_agent
 from .core.normalize.price import parse_price
 from .core.types import Price, TaxBasis
-from .core.http import ContactNotConfigured, RateLimitedClient, build_user_agent
 from .crawlers.base import CrawlerError
 from .crawlers.yokohama import YokohamaCrawler
 from .evaluation.metrics import Prediction, load_cases, misses, reachability, score

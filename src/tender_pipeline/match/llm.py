@@ -247,9 +247,11 @@ class AnthropicLlmClient:
             max_tokens=self.max_tokens,
             messages=[{'role': 'user', 'content': prompt}],
         )
+        # isinstance で絞る。`type == 'text'` の文字列比較だと型が絞れず、
+        # text を持たないブロック種別が増えたときに実行時まで気づけない。
         text = ''.join(
             block.text for block in message.content
-            if getattr(block, 'type', None) == 'text'
+            if isinstance(block, anthropic.types.TextBlock)
         )
         payload = json.loads(_extract_json(text))
         return LlmVerdict(

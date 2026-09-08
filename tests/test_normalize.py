@@ -22,7 +22,6 @@ from tender_pipeline.core.normalize.price import parse_price
 from tender_pipeline.core.normalize.text import normalize_text, normalize_title
 from tender_pipeline.core.types import Deadline, TaxBasis, TimeSource
 
-
 # ---------------------------------------------------------------------------
 # 日付
 # ---------------------------------------------------------------------------

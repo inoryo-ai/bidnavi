@@ -3,6 +3,7 @@ name = "public-tender-pipeline"
 version = "0.1.0"
 description = "入札案件情報システム - 技術検証フェーズ"
 requires-python = ">=3.11"
+license = { text = "MIT" }
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -10,4 +11,48 @@ testpaths = ["tests"]
 addopts = "-q -m 'not network'"
 markers = [
     "network: 外部サイトへ実際に接続するテスト（既定では実行しない）",
+    "security: 攻撃入力に対する防御を検証するテスト",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # import順
+    "B",        # bugbear（バグを生みやすい書き方）
+    "S",        # bandit（セキュリティ）
+    "UP",       # 古い書き方の検出
+    "SIM",      # 冗長な分岐
+    "PTH",      # os.path より pathlib
+    "RUF",
+]
+ignore = [
+    "E501",    # 行長は formatter に任せる
+    "RUF001",  # 全角括弧などを曖昧文字として弾かない（日本語コメントで多用する）
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# テストでは assert と一時ファイルの使用を許可する
+"tests/**" = ["S101", "S105", "S106", "S108"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+# 段階導入。まず「型を書いた関数は正しいか」を保証する
+check_untyped_defs = true
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["bs4.*", "pdfplumber.*", "openpyxl.*", "docx.*", "lxml.*", "requests.*"]
+ignore_missing_imports = true

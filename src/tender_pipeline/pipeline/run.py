@@ -94,18 +94,25 @@ class CrawlSession:
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
+    ) -> None:
+        """例外を記録してから、必ず再送出させる。
+
+        戻り値の型を bool ではなく None にしているのは意図的。
+        `__exit__` が True を返すと Python は例外を握りつぶす。
+        bool のままだと、将来 `return True` を書いた瞬間に
+        「約束3: 例外を握りつぶさない」が型検査を通過して壊れる。
+        None なら True を返しようがなく、構造的に守られる。
+        """
         if exc is not None:
             self._finish(CrawlStatus.FAILED,
                          error_kind=type(exc).__name__, error_message=str(exc))
-            return False  # 再送出する。握りつぶさない。
+            return  # 記録だけして再送出させる
 
         if not self._finished:
             # FR-105①: 0件は「成功」ではなく専用ステータスにする。
             # ここを CrawlStatus.OK にした瞬間、サイレント故障が検知不能になる。
             status = CrawlStatus.OK if self._fetched > 0 else CrawlStatus.OK_EMPTY
             self._finish(status)
-        return False
 
 
 def last_completed_run(

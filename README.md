@@ -1,7 +1,22 @@
 # 入札案件情報パイプライン（技術検証フェーズ）
 
+[![CI](https://github.com/inoryo-ai/public-tender-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/inoryo-ai/public-tender-pipeline/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![tests](https://img.shields.io/badge/tests-216%20passed-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
 中小事業者が、自社に関係のある入札案件を「探さずに」受け取り、
 応札するかどうかを当日中に判断できる状態をつくる。
+
+### 3行で
+
+1. **このプロダクトで最悪の事故は「クローラが落ちること」ではなく「エラーを出さずに静かに案件を失うこと」。**
+   設計の大半はそれを検知するために書かれている（[10個の約束](#設計上絶対に崩してはいけない約束)）。
+2. **実データで、監視では検知できないバグを2件見つけた**（文字化け・PDFの `(cid:NNN)`）。
+   どちらも例外が出ず件数も正常に見える。
+3. 🔴 **自分の設計仮説を実測で否定して、その数字ごと公開している**
+   （[「埋め込みを入れれば解ける」は間違いだった](#2段目についての実測結果2026-09-07)）。
+   **未達の項目も KPI を主張できない理由も、隠さず [§未達・要判断](#-未達要判断) に書いてある。**
 
 - 要件定義: [`docs/requirements.md`](docs/requirements.md)（v3.0）
 - 開発の経緯: 思考→計画→構築→レビュー→テスト→リリース→振り返りの7フェーズを5周

@@ -186,7 +186,7 @@ def _text_content_stream(text: str) -> str:
 
 
 def _font_resource(writer: object) -> dict[str, object]:
-    from pypdf.generic import DictionaryObject, NameObject, TextStringObject
+    from pypdf.generic import DictionaryObject, NameObject
     font = DictionaryObject({
         NameObject('/Type'): NameObject('/Font'),
         NameObject('/Subtype'): NameObject('/Type1'),

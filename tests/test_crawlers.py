@@ -18,7 +18,7 @@ import pytest
 
 from tender_pipeline.core.db import connect
 from tender_pipeline.core.html import looks_mojibake, soup_from
-from tender_pipeline.core.types import CrawlStatus, CrawlerKind
+from tender_pipeline.core.types import CrawlerKind, CrawlStatus
 from tender_pipeline.crawlers.base import (
     CrawlerRegistry,
     SelectorMissError,
@@ -153,10 +153,12 @@ def test_structure_change_surfaces_as_failed_run(
     """
     broken = listing_html.replace(b'news_list', b'news_list_v2')
 
-    with pytest.raises(SelectorMissError):
-        with CrawlSession(conn, ORGANIZATION_ID, NOW.date(), NOW) as session:
-            items = YokohamaCrawler().parse(broken, now=NOW)
-            session.record(fetched=len(items))
+    with (
+        pytest.raises(SelectorMissError),
+        CrawlSession(conn, ORGANIZATION_ID, NOW.date(), NOW) as session,
+    ):
+        items = YokohamaCrawler().parse(broken, now=NOW)
+        session.record(fetched=len(items))
 
     row = conn.execute('SELECT * FROM crawl_run').fetchone()
     assert row['status'] == CrawlStatus.FAILED

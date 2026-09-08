@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # サポート下限（3.11）と最新で両方通ることを保証する
+        python-version: ['3.11', '3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: 依存をインストール
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml pdfplumber openpyxl python-docx
+          pip install pytest ruff mypy
+
+      - name: Lint（ruff）
+        run: python -m ruff check .
+
+      - name: 型検査（mypy）
+        run: python -m mypy
+
+      # 外部サイトへは接続しない（-m 'not network' が pyproject の既定）。
+      # CI が自治体サイトへ負荷をかけないようにするための方針。
+      - name: テスト
+        run: python -m pytest
+        env:
+          PYTHONPATH: src

@@ -21,7 +21,7 @@ from urllib.parse import urljoin
 from ..core.html import soup_from
 from ..core.http import RateLimitedClient
 from ..core.types import CrawlerKind, RawTender
-from .base import CrawlerMeta, CrawlerError, ListingCrawler, SelectorMissError
+from .base import CrawlerMeta, ListingCrawler, SelectorMissError
 
 ENTRY_URL = 'https://www.city.yokohama.lg.jp/business/nyusatsu/'
 ORGANIZATION_ID = 'city-yokohama'

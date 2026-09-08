@@ -93,10 +93,12 @@ def test_session_marks_ok_empty_not_ok_when_zero(conn: sqlite3.Connection) -> No
 
 def test_session_records_failure_and_reraises(conn: sqlite3.Connection) -> None:
     """例外は記録した上で再送出する。握りつぶさない。"""
-    with pytest.raises(RuntimeError, match='boom'):
-        with CrawlSession(conn, ORG, dt.date(2026, 9, 7), NOW) as s:
-            s.record(fetched=3)
-            raise RuntimeError('boom')
+    with (
+        pytest.raises(RuntimeError, match='boom'),
+        CrawlSession(conn, ORG, dt.date(2026, 9, 7), NOW) as s,
+    ):
+        s.record(fetched=3)
+        raise RuntimeError('boom')
 
     row = conn.execute('SELECT * FROM crawl_run').fetchone()
     assert row['status'] == CrawlStatus.FAILED

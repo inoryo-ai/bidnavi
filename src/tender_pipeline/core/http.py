@@ -170,7 +170,7 @@ class RateLimitedClient:
             try:
                 res = self._session.get(
                     url, timeout=self.timeout,
-                    headers={'User-Agent': self.user_agent}, **kwargs)  # type: ignore[arg-type]
+                    headers={'User-Agent': self.user_agent}, **kwargs)
             except requests.RequestException as exc:
                 last_error = exc
             else:

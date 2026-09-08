@@ -18,7 +18,7 @@ from enum import StrEnum
 from ..core.natural_key import build_natural_key
 from ..core.normalize.dates import parse_deadline, parse_japanese_date
 from ..core.normalize.price import parse_price
-from ..core.normalize.text import normalize_text, normalize_title
+from ..core.normalize.text import normalize_text
 from ..core.types import (
     BidMethod,
     ChangeKind,
@@ -137,6 +137,39 @@ def _deadline_columns(prefix: str, deadline: Deadline | None) -> dict[str, objec
     }
 
 
+#: SQL文へ列名として埋め込んでよい識別子の許可リスト。
+#: ここに無い名前がSQLに入る＝列名が外部入力に由来している可能性があるため、
+#: 実行時に落とす。「今は安全」を「これからも安全」にするためのガード。
+_ALLOWED_COLUMNS: frozenset[str] = frozenset({
+    'natural_key', 'natural_key_version', 'natural_key_anchor',
+    'organization_id', 'source_url', 'source_captured_at', 'external_ref',
+    'title', 'title_normalized', 'method', 'announced_date',
+    'bid_deadline_ambiguous', 'estimated_price', 'price_undisclosed',
+    'price_tax_basis', 'price_raw', 'place_prefecture_code',
+    'qualification_note', 'status',
+    'current_revision', 'first_seen_at', 'last_seen_at',
+    'bid_deadline_date', 'bid_deadline_time',
+    'application_deadline_date', 'application_deadline_time',
+    'qa_deadline_date', 'qa_deadline_time',
+})
+
+
+class UnknownColumnError(ValueError):
+    """SQLへ埋め込もうとした列名が許可リストに無い。
+
+    列名が外部入力に由来していればSQLインジェクションになりうるため、
+    黙って通さずに落とす。
+    """
+
+
+def _assert_known_columns(cols: dict[str, object]) -> None:
+    unknown = set(cols) - _ALLOWED_COLUMNS
+    if unknown:
+        raise UnknownColumnError(
+            f'許可されていない列名をSQLに埋め込もうとしました: {sorted(unknown)}'
+        )
+
+
 def _to_columns(tender: Tender, key_meta: tuple[int, str]) -> dict[str, object]:
     version, anchor = key_meta
     cols: dict[str, object] = {
@@ -208,8 +241,12 @@ def ingest_tender(
         cols['first_seen_at'] = now.isoformat()
         cols['last_seen_at'] = now.isoformat()
         placeholders = ', '.join('?' * len(cols))
+        _assert_known_columns(cols)
+
+        # リテラルに限られる（_assert_known_columns で実行時にも保証）。
+        # 値はすべて ? でバインドしており、外部入力がSQL構文に混ざる経路はない。
         conn.execute(
-            f'INSERT INTO tender ({", ".join(cols)}) VALUES ({placeholders})',
+            f'INSERT INTO tender ({", ".join(cols)}) VALUES ({placeholders})',  # noqa: S608
             tuple(cols.values()),
         )
         conn.execute(
@@ -244,8 +281,10 @@ def ingest_tender(
     cols['current_revision'] = revision
     cols['last_seen_at'] = now.isoformat()
     assignments = ', '.join(f'{c} = ?' for c in cols)
+    _assert_known_columns(cols)
+
     conn.execute(
-        f'UPDATE tender SET {assignments} WHERE natural_key = ?',
+        f'UPDATE tender SET {assignments} WHERE natural_key = ?',  # noqa: S608
         (*cols.values(), tender.natural_key),
     )
     conn.execute(

@@ -13,7 +13,6 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # 統制語彙
 # ---------------------------------------------------------------------------
@@ -158,7 +157,10 @@ class Price:
             return True
         if lo is not None and self.amount < lo:
             return False
-        if hi is not None and self.amount > hi:
+        # SIM103（条件をそのまま return せよ）はここでは採らない。
+        # 下限・上限の判定を同じ形で並べることが可読性の要なので、
+        # 片方だけ書き方を変えない。
+        if hi is not None and self.amount > hi:  # noqa: SIM103
             return False
         return True
 
