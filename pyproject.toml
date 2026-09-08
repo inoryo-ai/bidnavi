@@ -54,5 +54,12 @@ check_untyped_defs = true
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["bs4.*", "pdfplumber.*", "openpyxl.*", "docx.*", "lxml.*", "requests.*"]
+# 型スタブを提供していない依存。
+# requests は CI 環境によってスタブの有無が変わり、
+# 「ローカルは緑・CIは赤」を生んだため、明示的に固定する。
+# anthropic は LLM実測フェーズでのみ使う任意依存（未インストールでも動く設計）。
+module = [
+    "bs4.*", "pdfplumber.*", "openpyxl.*", "docx.*", "lxml.*",
+    "requests.*", "anthropic.*",
+]
 ignore_missing_imports = true

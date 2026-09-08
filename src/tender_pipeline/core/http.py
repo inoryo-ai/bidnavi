@@ -224,8 +224,15 @@ class RateLimitedClient:
                 url, user_agent=self.user_agent, timeout=self.timeout)
         return self._robots[host]
 
-    def get(self, url: str, **kwargs: object) -> requests.Response:
-        """GET する。失敗は例外で伝える（Noneを返して黙らせない）。"""
+    def get(self, url: str) -> requests.Response:
+        """GET する。失敗は例外で伝える（Noneを返して黙らせない）。
+
+        **任意の kwargs を requests に素通しさせない**のは意図的。
+        通していると、呼び出し側が timeout や headers を上書きでき、
+        レート制限・User-Agent・タイムアウトという「相手に迷惑をかけない」
+        ための設定を、このクラスの外から壊せてしまう。
+        必要な設定が出てきたら、このクラスの属性として明示的に足す。
+        """
         # CR-102: 連絡先が入っていない User-Agent で自治体のサーバを叩かない。
         # 相手が問題を感じたときに連絡できないクローラは走らせてはいけない。
         if UNSET_CONTACT in self.user_agent:
@@ -250,7 +257,7 @@ class RateLimitedClient:
             try:
                 res = self._session.get(
                     url, timeout=self.timeout,
-                    headers={'User-Agent': self.user_agent}, **kwargs)
+                    headers={'User-Agent': self.user_agent})
             except requests.RequestException as exc:
                 last_error = exc
             else:
