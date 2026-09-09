@@ -37,6 +37,13 @@ jobs:
       - name: 型検査（mypy）
         run: python -m mypy
 
+      # 要件定義 付録B の「✅ 実装」が、本当にコードから辿れるかを検証する。
+      # 表は自己申告なので、放置すると実装と乖離する。
+      - name: トレーサビリティ検査
+        run: python scripts/check_traceability.py
+        env:
+          PYTHONIOENCODING: utf-8
+
       # 外部サイトへは接続しない（-m 'not network' が pyproject の既定）。
       # CI が自治体サイトへ負荷をかけないようにするための方針。
       - name: テスト
